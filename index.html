@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Thông Tin Thời Gian Thực</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .weather-icon {
+            font-size: 3rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .slide-in {
+            animation: slideIn 0.5s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white">
+    <!-- Header -->
+    <header class="glass-effect p-4 mb-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold flex items-center">
+                <i class="fas fa-tachometer-alt mr-3"></i>
+                Dashboard Thông Tin Thời Gian Thực
+            </h1>
+            <div class="flex items-center space-x-4">
+                <div id="currentTime" class="text-lg font-mono"></div>
+                <button onclick="refreshAll()" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-sync-alt"></i> Làm mới
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4">
+        <!-- Location & Time Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div class="glass-effect rounded-xl p-6 slide-in">
+                <h3 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-map-marker-alt mr-2"></i>Vị trí hiện tại
+                </h3>
+                <div id="locationInfo">
+                    <div class="animate-pulse">
+                        <div class="h-4 bg-white bg-opacity-30 rounded mb-2"></div>
+                        <div class="h-4 bg-white bg-opacity-30 rounded w-3/4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-effect rounded-xl p-6 slide-in">
+                <h3 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-clock mr-2"></i>Thời gian & Múi giờ
+                </h3>
+                <div id="timeInfo">
+                    <div class="text-2xl font-mono" id="localTime"></div>
+                    <div class="text-sm opacity-80" id="timezone"></div>
+                    <div class="text-sm opacity-80" id="daylightSaving"></div>
+                </div>
+            </div>
+
+            <div class="glass-effect rounded-xl p-6 slide-in">
+                <h3 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-thermometer-half mr-2"></i>Thời tiết hiện tại
+                </h3>
+                <div id="currentWeather">
+                    <div class="animate-pulse">
+                        <div class="h-8 bg-white bg-opacity-30 rounded mb-2"></div>
+                        <div class="h-4 bg-white bg-opacity-30 rounded"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weather Forecast -->
+        <div class="glass-effect rounded-xl p-6 mb-6 slide-in">
+            <h3 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-calendar-alt mr-2"></i>Dự báo thời tiết 5 ngày
+            </h3>
+            <div id="weatherForecast" class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <!-- Forecast items will be populated here -->
+            </div>
+        </div>
+
+        <!-- Financial Data -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="glass-effect rounded-xl p-6 slide-in">
+                <h3 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-coins mr-2"></i>Tỷ giá & Giá vàng
+                </h3>
+                <div id="financialData">
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center p-3 bg-white bg-opacity-10 rounded-lg">
+                            <span class="flex items-center"><i class="fas fa-dollar-sign mr-2"></i>USD/VND</span>
+                            <span class="font-bold text-green-400" id="usdRate">Đang tải...</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-white bg-opacity-10 rounded-lg">
+                            <span class="flex items-center"><i class="fas fa-euro-sign mr-2"></i>EUR/VND</span>
+                            <span class="font-bold text-blue-400" id="eurRate">Đang tải...</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-white bg-opacity-10 rounded-lg">
+                            <span class="flex items-center"><i class="fas fa-gem mr-2"></i>Vàng SJC</span>
+                            <span class="font-bold text-yellow-400" id="goldPrice">Đang tải...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-effect rounded-xl p-6 slide-in">
+                <h3 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-chart-line mr-2"></i>Chứng khoán
+                </h3>
+                <div id="stockData">
+                    <canvas id="stockChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- News & Traffic -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="glass-effect rounded-xl p-6 slide-in">
+                <h3 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-newspaper mr-2"></i>Tin tức mới nhất
+                </h3>
+                <div id="newsData" class="space-y-3 max-h-80 overflow-y-auto">
+                    <!-- News items will be populated here -->
+                </div>
+            </div>
+
+            <div class="glass-effect rounded-xl p-6 slide-in">
+                <h3 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-traffic-light mr-2"></i>Giao thông & Bản đồ
+                </h3>
+                <div id="trafficData">
+                    <div class="mb-4">
+                        <input type="text" id="routeInput" placeholder="Nhập điểm đến..." 
+                               class="w-full p-3 rounded-lg bg-white bg-opacity-20 text-white placeholder-gray-300 border border-white border-opacity-30">
+                        <button onclick="calculateRoute()" class="w-full mt-2 bg-green-500 hover:bg-green-600 p-3 rounded-lg transition-colors">
+                            <i class="fas fa-route mr-2"></i>Tính toán lộ trình
+                        </button>
+                    </div>
+                    <div id="routeResult" class="space-y-2">
+                        <div class="p-3 bg-white bg-opacity-10 rounded-lg">
+                            <div class="flex justify-between">
+                                <span>Vị trí hiện tại:</span>
+                                <span id="currentLocation">Đang xác định...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weather Alerts -->
+        <div class="glass-effect rounded-xl p-6 mb-6 slide-in">
+            <h3 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-exclamation-triangle mr-2"></i>Cảnh báo thời tiết
+            </h3>
+            <div id="weatherAlerts">
+                <div class="text-center text-gray-300">
+                    <i class="fas fa-shield-alt text-4xl mb-2"></i>
+                    <p>Không có cảnh báo thời tiết nào hiện tại</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let userLocation = null;
+        let weatherData = null;
+        let stockChart = null;
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+            setInterval(updateTime, 1000);
+            setInterval(refreshWeather, 300000); // Refresh weather every 5 minutes
+        });
+
+        async function initializeDashboard() {
+            showLoading();
+            await getUserLocation();
+            await Promise.all([
+                loadWeatherData(),
+                loadFinancialData(),
+                loadNewsData(),
+                loadTimeData()
+            ]);
+            hideLoading();
+        }
+
+        function showLoading() {
+            // Add loading indicators
+        }
+
+        function hideLoading() {
+            // Remove loading indicators
+        }
+
+        async function getUserLocation() {
+            try {
+                // Simulate getting location via IP
+                const mockLocation = {
+                    city: "Hồ Chí Minh",
+                    country: "Việt Nam",
+                    lat: 10.8231,
+                    lon: 106.6297,
+                    timezone: "Asia/Ho_Chi_Minh",
+                    ip: "123.456.789.0"
+                };
+                
+                userLocation = mockLocation;
+                updateLocationDisplay();
+            } catch (error) {
+                console.error('Error getting location:', error);
+                document.getElementById('locationInfo').innerHTML = 
+                    '<p class="text-red-300">Không thể xác định vị trí</p>';
+            }
+        }
+
+        function updateLocationDisplay() {
+            if (!userLocation) return;
+            
+            document.getElementById('locationInfo').innerHTML = `
+                <div class="space-y-2">
+                    <div class="flex items-center">
+                        <i class="fas fa-city mr-2"></i>
+                        <span>${userLocation.city}, ${userLocation.country}</span>
+                    </div>
+                    <div class="flex items-center text-sm opacity-80">
+                        <i class="fas fa-map-pin mr-2"></i>
+                        <span>${userLocation.lat.toFixed(4)}, ${userLocation.lon.toFixed(4)}</span>
+                    </div>
+                    <div class="flex items-center text-sm opacity-80">
+                        <i class="fas fa-network-wired mr-2"></i>
+                        <span>IP: ${userLocation.ip}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadWeatherData() {
+            try {
+                // Simulate weather API call
+                const mockWeather = {
+                    current: {
+                        temp: 28,
+                        feels_like: 32,
+                        humidity: 75,
+                        description: "Có mây",
+                        icon: "fas fa-cloud",
+                        wind_speed: 15,
+                        pressure: 1013
+                    },
+                    forecast: [
+                        { day: "Hôm nay", temp_max: 30, temp_min: 24, icon: "fas fa-sun", desc: "Nắng" },
+                        { day: "Thứ 2", temp_max: 29, temp_min: 23, icon: "fas fa-cloud-sun", desc: "Ít mây" },
+                        { day: "Thứ 3", temp_max: 27, temp_min: 22, icon: "fas fa-cloud-rain", desc: "Mưa nhẹ" },
+                        { day: "Thứ 4", temp_max: 26, temp_min: 21, icon: "fas fa-cloud-rain", desc: "Mưa" },
+                        { day: "Thứ 5", temp_max: 28, temp_min: 23, icon: "fas fa-cloud-sun", desc: "Ít mây" }
+                    ],
+                    alerts: []
+                };
+
+                weatherData = mockWeather;
+                updateWeatherDisplay();
+            } catch (error) {
+                console.error('Error loading weather:', error);
+            }
+        }
+
+        function updateWeatherDisplay() {
+            if (!weatherData) return;
+
+            // Current weather
+            document.getElementById('currentWeather').innerHTML = `
+                <div class="text-center">
+                    <i class="${weatherData.current.icon} weather-icon text-yellow-300"></i>
+                    <div class="text-3xl font-bold">${weatherData.current.temp}°C</div>
+                    <div class="text-sm opacity-80">Cảm giác như ${weatherData.current.feels_like}°C</div>
+                    <div class="text-sm">${weatherData.current.description}</div>
+                    <div class="grid grid-cols-2 gap-2 mt-3 text-xs">
+                        <div><i class="fas fa-tint mr-1"></i>${weatherData.current.humidity}%</div>
+                        <div><i class="fas fa-wind mr-1"></i>${weatherData.current.wind_speed}km/h</div>
+                    </div>
+                </div>
+            `;
+
+            // Forecast
+            const forecastHTML = weatherData.forecast.map(day => `
+                <div class="text-center p-3 bg-white bg-opacity-10 rounded-lg">
+                    <div class="font-semibold text-sm">${day.day}</div>
+                    <i class="${day.icon} text-2xl my-2"></i>
+                    <div class="text-sm">${day.temp_max}°/${day.temp_min}°</div>
+                    <div class="text-xs opacity-80">${day.desc}</div>
+                </div>
+            `).join('');
+            
+            document.getElementById('weatherForecast').innerHTML = forecastHTML;
+        }
+
+        async function loadFinancialData() {
+            try {
+                // Simulate financial API calls
+                const mockFinancial = {
+                    usd_vnd: 24350,
+                    eur_vnd: 26420,
+                    gold_sjc: 75800000,
+                    stocks: [
+                        { symbol: "VN-INDEX", price: 1234.56, change: +12.34 },
+                        { symbol: "HNX-INDEX", price: 234.56, change: -2.34 },
+                        { symbol: "UPCOM", price: 89.12, change: +0.45 }
+                    ]
+                };
+
+                updateFinancialDisplay(mockFinancial);
+                createStockChart(mockFinancial.stocks);
+            } catch (error) {
+                console.error('Error loading financial data:', error);
+            }
+        }
+
+        function updateFinancialDisplay(data) {
+            document.getElementById('usdRate').textContent = data.usd_vnd.toLocaleString() + ' VND';
+            document.getElementById('eurRate').textContent = data.eur_vnd.toLocaleString() + ' VND';
+            document.getElementById('goldPrice').textContent = (data.gold_sjc / 1000000).toFixed(1) + ' triệu/lượng';
+        }
+
+        function createStockChart(stocks) {
+            const ctx = document.getElementById('stockChart').getContext('2d');
+            
+            if (stockChart) {
+                stockChart.destroy();
+            }
+
+            stockChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: stocks.map(s => s.symbol),
+                    datasets: [{
+                        label: 'Giá trị chỉ số',
+                        data: stocks.map(s => s.price),
+                        backgroundColor: stocks.map(s => s.change >= 0 ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)'),
+                        borderColor: stocks.map(s => s.change >= 0 ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'white'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                color: 'white'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: 'white'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadNewsData() {
+            try {
+                // Simulate news API
+                const mockNews = [
+                    {
+                        title: "Thời tiết hôm nay: Nắng nóng gay gắt tại miền Bắc",
+                        summary: "Nhiệt độ có thể lên tới 38-40 độ C tại các tỉnh miền Bắc...",
+                        time: "2 giờ trước",
+                        source: "VnExpress"
+                    },
+                    {
+                        title: "Chứng khoán Việt Nam tăng điểm trong phiên sáng",
+                        summary: "VN-Index tăng 12 điểm, thanh khoản cải thiện đáng kể...",
+                        time: "1 giờ trước",
+                        source: "CafeF"
+                    },
+                    {
+                        title: "Tỷ giá USD/VND ổn định quanh mức 24.350",
+                        summary: "Ngân hàng Nhà nước tiếp tục can thiệp để ổn định tỷ giá...",
+                        time: "30 phút trước",
+                        source: "Dân Trí"
+                    }
+                ];
+
+                updateNewsDisplay(mockNews);
+            } catch (error) {
+                console.error('Error loading news:', error);
+            }
+        }
+
+        function updateNewsDisplay(news) {
+            const newsHTML = news.map(item => `
+                <div class="p-3 bg-white bg-opacity-10 rounded-lg hover:bg-opacity-20 transition-all cursor-pointer">
+                    <h4 class="font-semibold text-sm mb-1">${item.title}</h4>
+                    <p class="text-xs opacity-80 mb-2">${item.summary}</p>
+                    <div class="flex justify-between text-xs opacity-60">
+                        <span>${item.source}</span>
+                        <span>${item.time}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('newsData').innerHTML = newsHTML;
+        }
+
+        async function loadTimeData() {
+            updateTimeDisplay();
+        }
+
+        function updateTime() {
+            updateTimeDisplay();
+        }
+
+        function updateTimeDisplay() {
+            const now = new Date();
+            
+            // Current time in header
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('vi-VN');
+            
+            // Detailed time info
+            if (userLocation) {
+                const localTime = now.toLocaleString('vi-VN', {
+                    timeZone: userLocation.timezone,
+                    hour12: false
+                });
+                
+                document.getElementById('localTime').textContent = localTime;
+                document.getElementById('timezone').textContent = `Múi giờ: ${userLocation.timezone}`;
+                
+                // Check daylight saving (simplified)
+                const isDST = now.getTimezoneOffset() < (new Date(now.getFullYear(), 0, 1)).getTimezoneOffset();
+                document.getElementById('daylightSaving').textContent = 
+                    isDST ? 'Đang áp dụng giờ mùa hè' : 'Không áp dụng giờ mùa hè';
+            }
+        }
+
+        function calculateRoute() {
+            const destination = document.getElementById('routeInput').value;
+            if (!destination.trim()) {
+                alert('Vui lòng nhập điểm đến');
+                return;
+            }
+
+            // Simulate route calculation
+            const mockRoute = {
+                distance: '15.2 km',
+                duration: '25 phút',
+                traffic: 'Giao thông bình thường',
+                route: 'Đường Nguyễn Huệ → Đường Lê Lợi → ' + destination
+            };
+
+            document.getElementById('routeResult').innerHTML = `
+                <div class="p-3 bg-white bg-opacity-10 rounded-lg">
+                    <div class="flex justify-between mb-2">
+                        <span>Điểm đến:</span>
+                        <span class="font-semibold">${destination}</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span>Khoảng cách:</span>
+                        <span class="text-blue-300">${mockRoute.distance}</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span>Thời gian:</span>
+                        <span class="text-green-300">${mockRoute.duration}</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span>Tình hình giao thông:</span>
+                        <span class="text-yellow-300">${mockRoute.traffic}</span>
+                    </div>
+                    <div class="text-xs opacity-80 mt-2">
+                        <strong>Lộ trình:</strong> ${mockRoute.route}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function refreshAll() {
+            const button = event.target.closest('button');
+            const icon = button.querySelector('i');
+            
+            icon.classList.add('fa-spin');
+            
+            await Promise.all([
+                loadWeatherData(),
+                loadFinancialData(),
+                loadNewsData()
+            ]);
+            
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+            }, 1000);
+        }
+
+        async function refreshWeather() {
+            await loadWeatherData();
+        }
+
+        // Update current location display
+        document.getElementById('currentLocation').textContent = 'Hồ Chí Minh, Việt Nam';
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96771714a7eb856a',t:'MTc1MzkwMTkzNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
